@@ -23,7 +23,7 @@ use reth_beacon_consensus::EthBeaconConsensus;
 use reth_consensus::Consensus;
 
 use revm_interpreter::{
-    start_channel, print_records
+    parallel, print_records, start_channel
 };
 
 use std::time::Duration;
@@ -118,7 +118,7 @@ fn run_block() -> Result<(), Error> {
 
         eprint!("{:?}\n", round_num);
     }
-
+    parallel::wait(round_num);
 
     //let end_time = Instant::now();
 
