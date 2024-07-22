@@ -22,9 +22,9 @@ use reth_beacon_consensus::EthBeaconConsensus;
 
 use reth_consensus::Consensus;
 
-//use revm_interpreter::{
-//    start_channel, print_records
-//};
+use revm_interpreter::{
+    start_channel, print_records
+};
 
 use std::time::Duration;
 use std::{path::Path, time::Instant};
@@ -70,7 +70,8 @@ fn run_block() -> Result<(), Error> {
 
 
     // 创建一个通道
-    //let _ = start_channel();
+    let _ = start_channel();
+    let _ = print_records();
 
     //let mut total_exec_diff = Duration::ZERO;
     //let start_time = Instant::now();
