@@ -78,6 +78,7 @@ fn run_block() -> Result<(), Error> {
 
     // Execute Block by block number
     let mut round_num = 0;
+    let split: u64 = 1; //Bian Add 分割文件
     // let gas_used_sum = 0;
 
 
@@ -85,6 +86,13 @@ fn run_block() -> Result<(), Error> {
     let mut reader = csv::ReaderBuilder::new().has_headers(false).from_reader(file);
 
     for result in reader.records() {
+
+        //Brian add
+        if round_num%split == 0 {
+            let output_path: String = format!("./output/{}.log", round_num);
+            unsafe { parallel::WRITE_PATH_VEC.push(output_path) }; //所有权变更吗？
+        }
+
         let record = result?;
         let new_block_num = record[0].parse::<u64>().unwrap();
 
