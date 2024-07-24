@@ -74,7 +74,7 @@ fn run_block() -> Result<(), Error> {
     let _ = print_records();
 
     //let mut total_exec_diff = Duration::ZERO;
-    //let start_time = Instant::now();
+    let start_time = Instant::now();
 
     // Execute Block by block number
     let mut round_num = 0;
@@ -128,7 +128,7 @@ fn run_block() -> Result<(), Error> {
     }
     parallel::wait(round_num);
 
-    //let end_time = Instant::now();
+    let end_time = Instant::now();
 
     // 確保channel能完成所有工作
     //thread::sleep(Duration::from_secs(3));
@@ -136,8 +136,8 @@ fn run_block() -> Result<(), Error> {
     // 打印每個opcode運行總時間
     //print_records();
 
-    //let diff = end_time.duration_since(start_time);
-    //eprintln!("Overall Duration Time is {:?} s", diff.as_secs_f64());
+    let diff = end_time.duration_since(start_time);
+    eprintln!("Overall Duration Time is {:?} s", diff.as_secs_f64());
     //eprintln!("Total Execution Time is {:?} s\n", total_exec_diff.as_secs_f64());
 
 
