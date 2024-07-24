@@ -26,7 +26,7 @@ use revm_interpreter::{
     parallel, print_records, start_channel
 };
 
-use std::time::Duration;
+use std::{fs::OpenOptions, sync::Mutex, time::Duration};
 use std::{path::Path, time::Instant};
 use std::sync::Arc;
 use std::fs::File;
@@ -71,7 +71,10 @@ fn run_block() -> Result<(), Error> {
 
     // 创建一个通道
     let _ = start_channel();
-    let _ = print_records();
+    let _ = print_records(); //multi writer
+    let _ = print_records(); //multi writer
+    let _ = print_records(); //multi writer
+
 
     //let mut total_exec_diff = Duration::ZERO;
     let start_time = Instant::now();
@@ -89,8 +92,11 @@ fn run_block() -> Result<(), Error> {
 
         //Brian add
         if round_num%split == 0 {
-            let output_path: String = format!("./output/{}.log", round_num);
-            unsafe { parallel::WRITE_PATH_VEC.push(output_path) }; //所有权变更吗？
+            let output_path1: String = format!("./output/{}.log", round_num);
+            let output_path2 = format!("./output/{}.log", round_num);
+            File::create_new(output_path1).unwrap();
+            let f2: File = OpenOptions::new().append(true).open(output_path2).unwrap();
+            unsafe { parallel::WRITE_PATH_VEC.push(Mutex::new(f2)) }; //所有权变更吗？
         }
 
         let record = result?;
@@ -151,4 +157,6 @@ fn main() {
     run_block().unwrap();
     // // run_contract_code();
     // run_precompile_hash()
+
+    //let counter = Arc::new(std::sync::Mutex::new(0));
 }
