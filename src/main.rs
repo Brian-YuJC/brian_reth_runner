@@ -26,12 +26,15 @@ use revm_interpreter::{
     parallel, print_records, start_channel
 };
 
-use std::{fs::OpenOptions, sync::Mutex, time::Duration};
+use std::{fs::OpenOptions, sync::Mutex, thread::JoinHandle, time::Duration};
 use std::{path::Path, time::Instant};
 use std::sync::Arc;
 use std::fs::File;
 use csv::Error;
 use std::thread;
+
+//Need to add dependency in Cargo.toml: clap = { version = "4.0", features = ["derive"] }
+use clap::Parser;
 
 // pub mod contract_runner;
 // use contract_runner::run_contract_code;
@@ -39,7 +42,7 @@ use std::thread;
 // #[derive(Parser, Debug)]
 
 
-fn run_block() -> Result<(), Error> {
+fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Result<(), Error> {
     // Read Database Info
     // written in bin/reth/src/commands/debug_cmd/build_block.rs (from line 147)
 
@@ -71,9 +74,15 @@ fn run_block() -> Result<(), Error> {
 
     // 创建一个通道
     let _ = start_channel();
-    let _ = print_records(); //multi writer
-    let _ = print_records(); //multi writer
-    let _ = print_records(); //multi writer
+    let mut handler_vec = Vec::<JoinHandle<()>>::new();
+    for i in 1..=arg_print_thread_num {
+        let handler = print_records(i); //multi writer
+        handler_vec.push(handler);
+    }
+    // let _ = print_records(2); //multi writer
+    // let _ = print_records(3); //multi writer
+    // let _ = print_records(4); //multi writer
+    // let _ = print_records(5); //multi writer
 
 
     //let mut total_exec_diff = Duration::ZERO;
@@ -81,11 +90,12 @@ fn run_block() -> Result<(), Error> {
 
     // Execute Block by block number
     let mut round_num = 0;
-    let split: u64 = 1; //Bian Add 分割文件
+    let split: u64 = arg_split; //Bian Add 分割文件
     // let gas_used_sum = 0;
 
 
-    let file = File::open("./block_range.csv")?;
+    //let file = File::open("./block_range.csv")?;
+    let file = File::open(arg_input)?;
     let mut reader = csv::ReaderBuilder::new().has_headers(false).from_reader(file);
 
     for result in reader.records() {
@@ -151,9 +161,20 @@ fn run_block() -> Result<(), Error> {
     Ok(())
 }
 
+#[derive(Parser)]
+struct Args {
+    #[arg(short, long, default_value_t = 2)]
+    print_thread_num: u64, //用于输出的线程数量
+    #[arg(short, long, default_value_t = 100)] 
+    split: u64, // 几个快放一个文件
+    #[arg(short, long, default_value = "./block_range.csv")] 
+    intput: String, //输入文件地址
+}
 
 fn main() {
-    run_block().unwrap();
+    let args = Args::parse();
+
+    run_block(args.print_thread_num, args.split, args.intput).unwrap();
     // // run_contract_code();
     // run_precompile_hash()
 
