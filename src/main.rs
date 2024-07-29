@@ -21,26 +21,16 @@ use reth_blockchain_tree::{
 use reth_beacon_consensus::EthBeaconConsensus;
 
 use reth_consensus::Consensus;
+use revm_interpreter::parallel;
 
-use revm_interpreter::{
-    parallel, print_records, start_channel
-};
-
-use std::{fs::OpenOptions, sync::Mutex, thread::JoinHandle, time::Duration};
+use std::{sync::Mutex, thread::JoinHandle};
 use std::{path::Path, time::Instant};
 use std::sync::Arc;
 use std::fs::File;
 use csv::Error;
-use std::thread;
 
 //Need to add dependency in Cargo.toml: clap = { version = "4.0", features = ["derive"] }
 use clap::Parser;
-
-// pub mod contract_runner;
-// use contract_runner::run_contract_code;
-
-// #[derive(Parser, Debug)]
-
 
 fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Result<(), Error> {
     // Read Database Info
@@ -73,16 +63,12 @@ fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Re
 
 
     // 创建一个通道
-    let _ = start_channel(arg_split);
+    let _ = parallel::start_channel(arg_split);
     let mut handler_vec = Vec::<JoinHandle<()>>::new();
     for i in 1..=arg_print_thread_num {
-        let handler = print_records(i); //multi writer
+        let handler = parallel::print_records(i); //multi writer
         handler_vec.push(handler);
     }
-    // let _ = print_records(2); //multi writer
-    // let _ = print_records(3); //multi writer
-    // let _ = print_records(4); //multi writer
-    // let _ = print_records(5); //multi writer
 
 
     //let mut total_exec_diff = Duration::ZERO;
@@ -93,8 +79,6 @@ fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Re
     let split: u64 = arg_split; //Bian Add 分割文件
     // let gas_used_sum = 0;
 
-
-    //let file = File::open("./block_range.csv")?;
     let file = File::open(arg_input)?;
     let mut reader = csv::ReaderBuilder::new().has_headers(false).from_reader(file);
 
@@ -103,8 +87,6 @@ fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Re
         //Brian add
         if round_num%split == 0 {
             let output_path: String = format!("./output/{}.log", round_num);
-            //File::create(output_path.clone()).unwrap();
-            //let f: File = OpenOptions::new().append(true).open(output_path.clone()).unwrap();
             unsafe { parallel::WRITE_PATH_VEC.push(Mutex::new(output_path)) }; //所有权变更吗？
         }
 
@@ -148,9 +130,6 @@ fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Re
     // 確保channel能完成所有工作
     //thread::sleep(Duration::from_secs(3));
 
-    // 打印每個opcode運行總時間
-    //print_records();
-
     let diff = end_time.duration_since(start_time);
     eprintln!("Overall Duration Time is {:?} s", diff.as_secs_f64());
     //eprintln!("Total Execution Time is {:?} s\n", total_exec_diff.as_secs_f64());
@@ -175,8 +154,4 @@ fn main() {
     let args = Args::parse();
 
     run_block(args.print_thread_num, args.split, args.intput).unwrap();
-    // // run_contract_code();
-    // run_precompile_hash()
-
-    //let counter = Arc::new(std::sync::Mutex::new(0));
 }
