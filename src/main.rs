@@ -73,7 +73,7 @@ fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Re
 
 
     // 创建一个通道
-    let _ = start_channel();
+    let _ = start_channel(arg_split);
     let mut handler_vec = Vec::<JoinHandle<()>>::new();
     for i in 1..=arg_print_thread_num {
         let handler = print_records(i); //multi writer
@@ -103,7 +103,7 @@ fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Re
         //Brian add
         if round_num%split == 0 {
             let output_path: String = format!("./output/{}.log", round_num);
-            File::create_new(output_path.clone()).unwrap();
+            //File::create(output_path.clone()).unwrap();
             //let f: File = OpenOptions::new().append(true).open(output_path.clone()).unwrap();
             unsafe { parallel::WRITE_PATH_VEC.push(Mutex::new(output_path)) }; //所有权变更吗？
         }
@@ -141,7 +141,7 @@ fn run_block(arg_print_thread_num: u64, arg_split: u64, arg_input: String) -> Re
 
         eprint!("{:?}\n", round_num);
     }
-    parallel::wait(round_num);
+    parallel::wait(round_num, arg_split);
 
     let end_time = Instant::now();
 
